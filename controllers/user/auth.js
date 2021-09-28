@@ -84,7 +84,6 @@ exports.signUp = async (req, res) => {
         var name = req.body.name
         var phone = req.body.phone
         var nickname = req.body.nickname
-        var email = req.body.email
         var auth = req.body.auth
         var join_date = req.body.join_date //날짜로 받고
         var user = await User.findOne({
@@ -152,7 +151,6 @@ exports.userInfo = async (req, res) => {
         var name = ''
         var nickname = ''
         var phone = ''
-        var email = ''
         var join_date = ''
         var join_cnt = 0
         var join_date_i = ''
@@ -163,7 +161,6 @@ exports.userInfo = async (req, res) => {
             name = user.name
             phone = user.phone
             nickname = user.nickname
-            email = user.email
             join_date = user.join_date
 
             //입사 일수 계산
@@ -184,10 +181,22 @@ exports.userInfo = async (req, res) => {
 }
 
 
-exports.userUpdate = async (req,res) => {
+exports.userUpdate = async (req, res) => {
     try {
-        
+        var accountId = req.body.accountId
+        var name = req.body.name
+        var nickname = req.body.nickname
+        var phone = req.body.phone
+        await User.update({
+            name,
+            nickname,
+            phone,
+            where: { id: accountId }
+        })
+        console.log('유저 정보 수정 성공')
+        res.status(200).json({ "resultCode": 1, "data": null })
     } catch (error) {
-        
+        console.log('유저 정보 수정 실패:' + error)
+        res.status(400).json({ "resultCode": -1, "data": null })
     }
 }
