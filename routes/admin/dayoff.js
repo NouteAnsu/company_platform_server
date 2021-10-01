@@ -7,5 +7,6 @@ router.post('/updateDayoff' , adminDayoff.updateDayoff)
 router.post('/deleteDayoff', adminDayoff.deleteDayoff)
 router.post('/useDayoffList',adminDayoff.useDayoffList)
 router.post('/userDayoffInfo',adminDayoff.userDayoffInfo)
+router.post('/updateUseDayoff', adminDayoff.updateUseDayoff)
 
 module.exports = router

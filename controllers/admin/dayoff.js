@@ -28,6 +28,7 @@ exports.useDayoffList = async (req, res) => {
                 off_cnt = useDayoff[i].off_cnt
                 state = useDayoff[i].state
                 if (state == 0) state = '승인 전'
+                else if (state == -1) state = '반려'
                 else state = '승인'
                 items[i] = { name, off_start, off_end, off_type, off_cnt, state }
             }
@@ -164,10 +165,9 @@ exports.deleteDayoff = async (req, res) => {
         var accountId = req.body.accountId
         var user_id = req.body.user_id
         var auth = await User.findOne({
-            where: { id: accountId },
-            attribues: ['auth']
+            where: { id: accountId }
         })
-        if (auth === 1) {
+        if (auth.auth === 1) {
             await destroy({
                 where: { user_id }
             })
@@ -179,6 +179,30 @@ exports.deleteDayoff = async (req, res) => {
         }
     } catch (error) {
         console.log('휴가 삭제 실패:' + error)
+        res.status(400).json({ "resultCode": -1, "data": null })
+    }
+}
+
+
+exports.updateUseDayoff = async (req, res) => {
+    try {
+        var accountId = req.body.accountId
+        var user_id = req.body.user_id
+        var auth = await User.findOne({
+            where: { id: accountId },
+        })
+        if (auth.auth === 1) {
+            await UseDayoff.update({
+                state: req.body.state
+            }, { where: { user_id } })
+            console.log('연차 사용 수정')
+            res.status(200).json({ "resultCode": 1, "data": null })
+        } else {
+            console.log('관리자 권한 없음')
+            res.status(400).json({ "resultCode": -40, "data": null })
+        }
+    } catch (error) {
+        console.log('연차 사용 수정 실패:' + error)
         res.status(400).json({ "resultCode": -1, "data": null })
     }
 }
