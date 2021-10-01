@@ -1,4 +1,4 @@
-var { User } = require('../../models')
+var { User, Logs } = require('../../models')
 const crypto = require('crypto')
 const jwt = require('jsonwebtoken')
 const secret = require('../../config/jwt').KEY.secret
@@ -13,6 +13,9 @@ exports.signIn = async (req, res) => {
         var id_inToken = 0
         var username = ''
         var password = ''
+
+
+        var login_result = 1
         if (isAutoLogin) {
             console.log('자동 로그인')
             accountId = req.body.accountId
@@ -24,6 +27,7 @@ exports.signIn = async (req, res) => {
                     console.log('액세스토큰 실패, 리프레쉬 검증')
                     jwt.verify(refreshToekn, secret, (err, user) => {
                         if (err) {
+                            login_result = -1
                             console.log('리프레쉬토큰 실패')
                             res.status(403).json({ "resultCode": -30, "data": null })
                         } else {
@@ -37,13 +41,20 @@ exports.signIn = async (req, res) => {
                 }
             })
             //토큰검증이 성공후
+            var user = await User.findOne({
+                where:{id:accountId}
+            })
+            username=user.username
+
             if (accountId === id_inToken) {
                 console.log('토큰값 일치')
                 accessToken = jwt.sign({ accountId }, secret, { expiresIn: "24h" })
                 refreshToekn = jwt.sign({ accountId }, secret, { expiresIn: "30d" })
+
                 console.log('자동 로그인 성공')
                 res.status(200).json({ "resultCode": 1, "data": { accountId, accessToken, refreshToekn } })
             } else {
+                login_result = -1
                 console.log('토큰값 불일치, 자동로그인 실패')
                 res.status(400).json({ "resultCode": -20, "data": null })
             }
@@ -63,14 +74,23 @@ exports.signIn = async (req, res) => {
                     console.log('로그인 성공')
                     res.status(200).json({ "resultCode": 1, "data": { accountId, accessToken, refreshToekn } })
                 } else {
+                    login_result = -1
                     console.log('비밀번호 불일치 로그인 실패')
                     res.status(400).json({ "resultCode": -20, "data": null })
                 }
             } else {
+                login_result = -1
                 console.log('유저 없음 로그인 실패')
                 res.status(400).json({ "resultCode": -20, "data": null })
             }
         }
+
+        await Logs.create({
+            user_id:accountId,
+            username,
+            login_result
+        })
+        console.log('로그인 logs생성')
     } catch (error) {
         console.log('로그인 실패:' + error)
         res.status(400).json({ "resultCode": -1, "data": null })
@@ -103,7 +123,7 @@ exports.signUp = async (req, res) => {
                 auth,
                 state: 1,
                 join_date,
-                resignation_date: null
+                resignation_date: new Date(0)
             })
             console.log('회원가입 성공')
             res.status(200).json({ "resultCode": 1, "data": null })
@@ -181,6 +201,7 @@ exports.userInfo = async (req, res) => {
 }
 
 
+//파일 업로드 부분 빼고
 exports.userUpdate = async (req, res) => {
     try {
         var accountId = req.body.accountId

@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
     total_cnt: DataTypes.FLOAT,
     rest_cnt: DataTypes.FLOAT,
     use_cnt: DataTypes.FLOAT,
-    expire_day:DataTypes.INTEGER
+    expire_day:DataTypes.DATE
   }, {
     sequelize,
     modelName: 'Dayoff',

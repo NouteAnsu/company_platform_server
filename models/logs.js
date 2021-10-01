@@ -16,9 +16,8 @@ module.exports = (sequelize, DataTypes) => {
   };
   Logs.init({
     user_id: DataTypes.INTEGER,
-    login_date: DataTypes.DATE,
+    username: DataTypes.STRING,
     login_result: DataTypes.INTEGER,
-    ip: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'Logs',

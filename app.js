@@ -3,6 +3,7 @@ const app = express()
 const Router = require('./routes/index')
 const sequelize = require('./models').sequelize
 const session = require('express-session')
+const cors = require('cors')
 const dotenv = require('dotenv')
 dotenv.config()
 
@@ -38,6 +39,18 @@ app.use(session({
     saveUninitialized: false
 }))
 
+//cors설정
+var allowlist = ['http://localhost:8080'];
+var corsOptionsDelegate = function (req, callback) {
+    var corsOptions;
+    if (allowlist.indexOf(req.header('Origin')) !== -1) {
+        corsOptions = { origin: true } // reflect (enable) the requested origin in the CORS response
+    } else {
+        corsOptions = { origin: false } // disable CORS for this request
+    }
+    callback(null, corsOptions) // callback expects two parameters: error and options
+}
+app.use(cors(corsOptionsDelegate));
 
 app.use('/v1',Router)
 
