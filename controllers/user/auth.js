@@ -1,7 +1,9 @@
-var { User, Logs } = require('../../models')
+const { User, Logs, Dayoff } = require('../../models')
+const models = require('../../models/index');
 const crypto = require('crypto')
 const jwt = require('jsonwebtoken')
-const secret = require('../../config/jwt').KEY.secret
+const secret = require('../../config/jwt').KEY.secret;
+const { useDayoffList } = require('../admin/dayoff');
 
 
 exports.signIn = async (req, res) => {
@@ -42,9 +44,9 @@ exports.signIn = async (req, res) => {
             })
             //토큰검증이 성공후
             var user = await User.findOne({
-                where:{id:accountId}
+                where: { id: accountId }
             })
-            username=user.username
+            username = user.username
 
             if (accountId === id_inToken) {
                 console.log('토큰값 일치')
@@ -86,7 +88,7 @@ exports.signIn = async (req, res) => {
         }
 
         await Logs.create({
-            user_id:accountId,
+            user_id: accountId,
             username,
             login_result
         })
@@ -97,6 +99,7 @@ exports.signIn = async (req, res) => {
     }
 }
 
+//파일 업로드도 넣어야함 formData
 exports.signUp = async (req, res) => {
     try {
         var username = req.body.username
@@ -105,7 +108,11 @@ exports.signUp = async (req, res) => {
         var phone = req.body.phone
         var nickname = req.body.nickname
         var auth = req.body.auth
-        var join_date = req.body.join_date //날짜로 받고
+        var dept = req.body.dept
+        var join_date = new Date(req.body.join_date)
+        var join_cnt = 0
+        var current_cnt = new Date().getTime()
+        join_cnt = Math.ceil((current_cnt - join_date.getTime()) / (1000 * 3600 * 24))
         var user = await User.findOne({
             where: { username }
         })
@@ -113,17 +120,34 @@ exports.signUp = async (req, res) => {
             console.log('이미 가입된 회원')
             res.status(400).json({ "resultCode": -10, "data": null })
         } else {
-            await User.create({
-                username,
-                password,
-                nickname,
-                name,
-                phone,
-                email,
-                auth,
-                state: 1,
-                join_date,
-                resignation_date: new Date(0)
+            await models.sequelize.transaction(async (t) => {
+                var user = await User.create({
+                    username,
+                    password,
+                    nickname,
+                    name,
+                    phone,
+                    dept,
+                    auth,
+                    state: 1,
+                    join_cnt,
+                    join_date
+                }, { transaction: t })
+                var user_id = user.id
+                var total_cnt = 0
+                var rest_cnt = 0
+                var use_cnt = 0
+                var expire_day = new Date(join_date.getTime() + (8784 * 60 * 60 * 1000) - (1000))
+                if (user.join_cnt > 365) {
+                    expire_day = ''
+                }
+                await Dayoff.create({
+                    user_id,
+                    total_cnt,
+                    rest_cnt,
+                    use_cnt,
+                    expire_day
+                }, { transaction: t })
             })
             console.log('회원가입 성공')
             res.status(200).json({ "resultCode": 1, "data": null })

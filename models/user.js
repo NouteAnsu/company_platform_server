@@ -25,9 +25,9 @@ module.exports = (sequelize, DataTypes) => {
     auth: DataTypes.INTEGER,
     dept: DataTypes.STRING,
     state: DataTypes.INTEGER,
-    join_date: DataTypes.INTEGER,
+    join_cnt: DataTypes.INTEGER,
     profile_img: DataTypes.STRING,
-    resignation_date: DataTypes.DATE
+    join_date: DataTypes.DATE
   }, {
     sequelize,
     modelName: 'User',
