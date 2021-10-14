@@ -6,8 +6,8 @@ var user = require('../../controllers/user/auth')
 
 router.post('/signIn', user.signIn)
 router.post('/signUp', user.signUp)
-router.post('/userInfo', user.userInfo)
-router.get('/userList',user.userList)
-router.post('/userUpdate',user.userUpdate)
+router.post('/info', user.userInfo)
+router.get('/list',user.userList)
+router.post('/update',user.userUpdate)
 
 module.exports = router

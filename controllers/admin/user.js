@@ -52,6 +52,17 @@ exports.userInfo = async (req, res) => {
             var dept = user.dept
             var profile_img = user.profile_img
             var join_date = user.join_date
+            var join_date_i = ''
+            var current_date = ''
+            //입사 일수 계산
+            //입사 일수 계산
+            join_date_i = new Date(join_date).getTime()
+            current_date = new Date().getTime()
+            join_cnt = Math.ceil((current_date - join_date_i) / (1000 * 3600 * 24))
+            await User.update({
+                join_cnt
+            }, { where: { id: user_id } })
+
             console.log('관리자 사용자 상세정보 조회')
             res.status(200).json({ "resultCode": 1, "data": { username, name, nickname, phone, dept, profile_img, join_date } })
         } else {

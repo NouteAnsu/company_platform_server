@@ -210,6 +210,9 @@ exports.userInfo = async (req, res) => {
             join_date_i = new Date(join_date).getTime()
             current_date = new Date().getTime()
             join_cnt = Math.ceil((current_date - join_date_i) / (1000 * 3600 * 24))
+            await User.update({
+                join_cnt
+            }, { where: { id: accountId } })
             dept = user.dept
             console.log('유저 정보 조회 성공')
             res.status(200).json({ "resultCode": 1, "data": { username, name, nickname, phone, email, join_date, dept, join_cnt } })
