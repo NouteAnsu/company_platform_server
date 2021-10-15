@@ -100,7 +100,89 @@ exports.useDayoffInsert = async (req, res) => {
             res.status(200).json({ "resultCode": 1, "data": null })
         }
     } catch (error) {
-        console.log('연차 사용 실패')
+        console.log('연차 사용 실패' + error)
         res.status(400).json({ "resultCode": 1, "data": null })
+    }
+}
+
+
+exports.useDayoffUpdate = async (req, res) => {
+    try {
+        var accountId = req.body.accountId
+        var off_cnt = req.body.off_cnt
+        var off_type = req.body.off_type
+        var off_start = req.body.off_start
+        var off_end = req.body.off_end
+        var off_comment = req.body.off_comment
+        var dayoffInfo = await Dayoff.findOne({
+            where: { user_id: accountId }
+        })
+        if (dayoffInfo.rest_cnt < off_cnt) {
+            console.log('잔여 연차 부족')
+            res.status(400).json({ "resultCode": -1, "data": null })
+        } else {
+            if (dayoffInfo.state == 1 || dayoffInfo.state == -99) {
+                console.log('이미 승인되거나 취소된 연차, 관리자 문의')
+                res.status(400).json({ "resultCode": -1, "data": null })
+            } else {
+                var rest_cnt = dayoffInfo.rest_cnt - off_cnt
+                var use_cnt = dayoffInfo.use_cnt + off_cnt
+                await models.sequelize.transaction(async (t) => {
+                    await Dayoff.update({
+                        rest_cnt,
+                        use_cnt
+                    }, { where: { user_id: accountId } }, { transaction: t })
+                    await UseDayoff.create({
+                        off_type,
+                        off_start,
+                        off_end,
+                        off_cnt,
+                        off_comment,
+                        user_id: accountId
+                    }, { transaction: t })
+                })
+                console.log('연차 수정 성공')
+                res.status(200).json({ "resultCode": 1, "data": null })
+            }
+        }
+    } catch (error) {
+        console.log('연차 수정 실패' + error)
+        res.status(400).json({ "resultCode": -1, "data": null })
+    }
+}
+
+exports.useDayoffCancel = async (req, res) => {
+    try {
+        var accountId = req.body.accountId
+        var id = req.body.useDayoffId
+        var state = -99
+        var useDayoff = await UseDayoff.findOne({
+            where: { id }
+        })
+        if (useDayoff.state == 1 || useDayoff.state == -99) {
+            console.log('연차 취소 불가, 관리자에게 문의')
+            res.status(400).json({ "resultCode": -1, "data": null })
+        } else {
+            var off_cnt = useDayoff.off_cnt
+            var dayoff = await Dayoff.findOne({
+                where: { id: accountId }
+            })
+            await models.sequelize.transaction(async (t) => {
+                await UseDayoff.update({
+                    state
+                }, { where: { id } }, { transaction: t })
+                var rest_cnt = (dayoff.rest_cnt) + off_cnt
+                var use_cnt = (dayoff.use_cnt) - off_cnt
+                await Dayoff.update({
+                    rest_cnt,
+                    use_cnt
+                }, { where: { id: accountId } }, { transaction: t })
+            })
+            console.log('연차 사용 취소 완료')
+            res.status(200).json({ "resultCode": 1, "data": null })
+        }
+    } catch (error) {
+        console.log('연차 사용 취소 실패' + error)
+        res.status(400).json({ "resultCode": -1, "data": null })
     }
 }
