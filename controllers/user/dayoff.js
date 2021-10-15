@@ -29,6 +29,7 @@ exports.dayoffInfo = async (req, res) => {
                 use_cnt = updateInfo.use_cnt
             })
             console.log('연차 만료! 새로운 연차 갱신')
+            res.status(200).json({ "resultCode": 1, "data": { total_cnt, rest_cnt, use_cnt, expire_day } })
         }
     } catch (error) {
         console.log('연차 정보 조회 실패:' + error)
@@ -62,6 +63,25 @@ exports.useDayoffList = async (req, res) => {
     } catch (error) {
         console.log('사용 연차 리스트 출력 실패:' + error)
         res.status(400).json({ "resultCode": -1, "data": null })
+    }
+}
+
+exports.useDayoffInfo = async (req, res) => {
+    try {
+        var id = req.body.useDayoffId
+        var useDayoff = await UseDayoff.findOne({
+            where : {id}
+        })
+        var off_type = useDayoff.off_type
+        var off_start = useDayoff.off_start
+        var off_end = useDayoff.off_end
+        var off_cnt = useDayoff.off_cnt
+        var off_comment= useDayoff.off_comment
+        var state = useDayoff.state
+        if(state==1)state='승인'
+        else if(state==-99) state='취소'
+    } catch (error) {
+
     }
 }
 
