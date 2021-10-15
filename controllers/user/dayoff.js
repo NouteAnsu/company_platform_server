@@ -1,5 +1,5 @@
-var { User, Dayoff, UseDayoff } = require('../../models')
-
+const { User, Dayoff, UseDayoff } = require('../../models')
+const models = require('../../models/index');
 
 exports.dayoffInfo = async (req, res) => {
     try {
@@ -31,6 +31,76 @@ exports.dayoffInfo = async (req, res) => {
             console.log('연차 만료! 새로운 연차 갱신')
         }
     } catch (error) {
+        console.log('연차 정보 조회 실패:' + error)
+        res.status(400).json({ "resultCode": -1, "data": null })
+    }
+}
 
+exports.useDayoffList = async (req, res) => {
+    try {
+        var accountId = req.body.accountId
+        var state = req.body.state
+        var items = []
+        var useDayoffs = await UseDayoff.findAll({
+            where: { id: accountId, state }
+        })
+        var off_type = ''
+        var off_start = ''
+        var off_end = ''
+        var off_cnt = 0
+        for (var i = 0; i < useDayoffs.length; i++) {
+            if (useDayoffs[i].off_type == 1) off_type = '승인'
+            else if (useDayoffs[i].off_type == 0) off_type = '승인 전'
+            else off_type = '반려'
+            off_start = useDayoffs[i].off_start
+            off_end = useDayoffs[i].off_end
+            off_cnt = useDayoffs[i].off_cnt
+            items[i] = { off_type, off_start, off_end, off_cnt }
+        }
+        console.log('사용 연차 리스트 출력 성공')
+        res.status(200).json({ "resultCode": 1, "data": { "items": items } })
+    } catch (error) {
+        console.log('사용 연차 리스트 출력 실패:' + error)
+        res.status(400).json({ "resultCode": -1, "data": null })
+    }
+}
+
+exports.useDayoffInsert = async (req, res) => {
+    try {
+        var accountId = req.body.accountId
+        var off_cnt = req.body.off_cnt
+        var off_type = req.body.off_type
+        var off_start = req.body.off_start
+        var off_end = req.body.off_end
+        var off_comment = req.body.off_comment
+        var dayoffInfo = await Dayoff.findOne({
+            where: { user_id: accountId }
+        })
+        if (dayoffInfo.rest_cnt < off_cnt) {
+            console.log('잔여 연차 부족')
+            res.status(400).json({ "resultCode": -1, "data": null })
+        } else {
+            var rest_cnt = dayoffInfo.rest_cnt - off_cnt
+            var use_cnt = dayoffInfo.use_cnt + off_cnt
+            await models.sequelize.transaction(async (t) => {
+                await Dayoff.update({
+                    rest_cnt,
+                    use_cnt
+                }, { where: { user_id: accountId } }, { transaction: t })
+                await UseDayoff.create({
+                    off_type,
+                    off_start,
+                    off_end,
+                    off_cnt,
+                    off_comment,
+                    user_id: accountId
+                }, { transaction: t })
+            })
+            console.log('연차 사용 성공')
+            res.status(200).json({ "resultCode": 1, "data": null })
+        }
+    } catch (error) {
+        console.log('연차 사용 실패')
+        res.status(400).json({ "resultCode": 1, "data": null })
     }
 }

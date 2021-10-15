@@ -1,4 +1,4 @@
-var { User, Dayoff, UseDayoff } = require('../../models')
+const { User, Dayoff, UseDayoff } = require('../../models')
 const models = require('../../models/index');
 
 

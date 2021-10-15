@@ -1,4 +1,4 @@
-var { User } = require('../../models')
+const { User } = require('../../models')
 
 exports.userList = async (req, res) => {
     try {
