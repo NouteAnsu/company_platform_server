@@ -70,18 +70,23 @@ exports.useDayoffInfo = async (req, res) => {
     try {
         var id = req.body.useDayoffId
         var useDayoff = await UseDayoff.findOne({
-            where : {id}
+            where: { id }
         })
         var off_type = useDayoff.off_type
         var off_start = useDayoff.off_start
         var off_end = useDayoff.off_end
         var off_cnt = useDayoff.off_cnt
-        var off_comment= useDayoff.off_comment
+        var off_comment = useDayoff.off_comment
         var state = useDayoff.state
-        if(state==1)state='승인'
-        else if(state==-99) state='취소'
+        if (state == 1) state = '승인'
+        else if (state == -99) state = '취소'
+        else if (state == -1) state = '반려'
+        else state = '승인 전'
+        console.log('사용 연차 조회 완료')
+        res.status(200).json({ "resultCode": 1, "data": { off_type, off_start, off_end, off_cnt, off_comment, state } })
     } catch (error) {
-
+        console.log('사용 연차 조회 실패' + error)
+        res.status(400).json({ "resultCode": -1, "data": null })
     }
 }
 
